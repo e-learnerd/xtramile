@@ -1,0 +1,120 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="jumbotron text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Xtramile Solutions <a href="https://www.xtramilesolutions.com.au/">Digital Health Solution</a>.</p>
+</div>
+
+<div class="row">
+    <div class="col-6">
+        <div class="mb-3">
+            <label class="form-label" for="country">Select Country</label>
+            <select class="form-select" id="f-country">
+                <option value="">-- Selet a country --</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="city">Select City</label>
+            <select class="form-select" id="f-city">
+                <option value="">-- Selet a city --</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<p>Location : <span id="span-location"></span></p>
+<p>Time : <span id="span-time"></span></p>
+<p>Wind : <span id="span-wind"></span></p>
+<p>Sky conditions : <span id="span-skycondition"></span></p>
+<p>Temperature celcius : <span id="span-celcius"></span></p>
+<p>Temperature fahrenheit : <span id="span-fahrenheit"></span></p>
+<p>Dew Point : <span id="span-dewpoint"></span></p>
+<p>Relative Humidity : <span id="span-relativehumidity"></span></p>
+<p>Pressure : <span id="span-pressure"></span></p>
+
+@section Scripts{
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            fetchCountry();
+        });
+
+        function fetchCountry() {
+            $.ajax({
+                type: 'GET',
+                url: 'http://localhost:5000/country',
+                success: function (result) {
+                    $.each(result.data, function (i, item) {
+                        $('#f-country').append($('<option>', {
+                            value: item.name,
+                            text: item.name
+                        }));
+                    });
+                }
+            });
+        }
+
+        $('#f-country').on('change', function (e) {
+            let country = $(e.target).val();
+            $('#f-city')
+                .empty()
+                .append('<option selected="selected" value="">-- Selet a city --</option>');
+
+            if (!country) {
+                return false;
+            }
+
+            $.ajax({
+                type: 'GET',
+                url: 'http://localhost:5000/country/' + country,
+                success: function (result) {
+                    $.each(result.data, function (i, item) {
+                        $('#f-city').append($('<option>', {
+                            value: item,
+                            text: item
+                        }));
+                    });
+                }
+            });
+        });
+
+        $('#f-city').on('change', function (e) {
+            let city = $(e.target).val();
+            if (!city) {
+                return false;
+            }
+
+            $.ajax({
+                type: 'GET',
+                url: 'http://localhost:5000/weatherforecast/' + city,
+                success: function (item) {
+                    $('#span-location').text("Long: " + item.coord.lon + ". Lat: " + item.coord.lat);
+                    $('#span-time').text(unixToDate(item.dt));
+                    $('#span-wind').text(item.wind.speed);
+                    $('#span-skycondition').text(item.clouds.all);
+                    $('#span-celcius').text(item.main.tempCelcius);
+                    $('#span-fahrenheit').text(item.main.temp);
+                    $('#span-dewpoint').text();
+                    $('#span-relativehumidity').text(item.main.humidity);
+                    $('#span-pressure').text(item.main.pressure);
+                }
+            });
+        });
+
+        function unixToDate(unixSeconds) {
+            var date = new Date(unixSeconds * 1000);
+            var year = date.getFullYear();
+            var month = date.getMonth();
+            var day = date.getDate();
+            var hours = date.getHours();
+            var minutes = "0" + date.getMinutes();
+            var seconds = "0" + date.getSeconds();
+            var d = year + '-' + month + '-' + day + ' ' + hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
+            return d;
+        }
+    </script>
+}
